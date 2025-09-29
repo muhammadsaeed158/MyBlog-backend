@@ -1,0 +1,28 @@
+{
+  "name": "myblog-clean",
+  "version": "1.0.0",
+  "description": "A professional backend for a blogging platform built with Node.js, Express, and MongoDB. Designed to support user authentication, blog post management, and scalable APIs for modern web applications.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muhammadsaeed158/MyBlog-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/muhammadsaeed158/MyBlog-backend/issues"
+  },
+  "homepage": "https://github.com/muhammadsaeed158/MyBlog-backend#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "mongoose": "^8.18.2"
+  }
+}
