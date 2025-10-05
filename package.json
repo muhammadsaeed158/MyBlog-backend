@@ -1,28 +1,22 @@
 {
-  "name": "myblog-clean",
+  "name": "myblog-backend",
   "version": "1.0.0",
-  "description": "A professional backend for a blogging platform built with Node.js, Express, and MongoDB. Designed to support user authentication, blog post management, and scalable APIs for modern web applications.",
+  "description": "Supabase powered backend for MyBlog app",
   "main": "server.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/muhammadsaeed158/MyBlog-backend.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/muhammadsaeed158/MyBlog-backend/issues"
-  },
-  "homepage": "https://github.com/muhammadsaeed158/MyBlog-backend#readme",
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "mongoose": "^8.18.2"
-  }
+    "dotenv": "^17.2.3",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "author": "Kalsoom Saeed",
+  "license": "MIT"
 }
