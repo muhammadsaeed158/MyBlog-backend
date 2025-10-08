@@ -1,7 +1,7 @@
 {
   "name": "myblog-backend",
   "version": "1.0.0",
-  "description": "Supabase powered backend for MyBlog app",
+  "description": "Supabase powered backend for MyBlog app (Termux + Node.js)",
   "main": "server.js",
   "type": "module",
   "scripts": {
