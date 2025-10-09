@@ -1,12 +1,8 @@
-// server.js — Node.js + Supabase backend
+// server.js — Deno Deploy + Supabase backend
 
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import { createClient } from "@supabase/supabase-js";
-
-// 🔐 Load environment variables from .env file
-dotenv.config();
+import express from "npm:express";
+import cors from "npm:cors";
+import { createClient } from "npm:@supabase/supabase-js";
 
 // ⚙️ Initialize Express
 const app = express();
@@ -14,13 +10,14 @@ app.use(cors());
 app.use(express.json());
 
 // 🔗 Supabase connection setup
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY; // use anon/public key
+// In Deno Deploy, we use Deno.env.get() instead of process.env
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseKey = Deno.env.get("SUPABASE_KEY"); // anon/public key
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 🏠 Home route
 app.get("/", (req, res) => {
-  res.send("🚀 Supabase Blog API running successfully on Termux!");
+  res.send("🚀 Supabase Blog API is running successfully on Deno Deploy!");
 });
 
 // 📋 Get all posts
@@ -50,7 +47,7 @@ app.post("/posts", async (req, res) => {
 });
 
 // 🚀 Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ Supabase Backend running at http://127.0.0.1:${PORT}`);
+const PORT = 8000;
+app.listen(PORT, () => {
+  console.log(`✅ Supabase Backend running at http://localhost:${PORT}`);
 });
