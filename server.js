@@ -1,3 +1,7 @@
+
+
+console.log("🔍 SUPABASE_URL =", Deno.env.get("SUPABASE_URL"));
+console.log("🔍 SUPABASE_KEY =", Deno.env.get("SUPABASE_KEY") ? "✅ Loaded" : "❌ Missing");
 // server.js — Deno Deploy + Supabase backend
 
 import express from "npm:express";
