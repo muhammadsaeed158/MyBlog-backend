@@ -1,9 +1,14 @@
+// post.js
 import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
 
-// ⚠️ Backend only: Use Service Role Key safely, never expose on frontend
-const supabaseUrl = "https://ynvhluadxmsjoihdjmky.supabase.co";
-const supabaseServiceKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InludmhsdWFkeG1zam9paGRqbWt5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTMwNDAxOCwiZXhwIjoyMDc0ODgwMDE4fQ.YrwVbrhxoc2Mtqf0iHV1hdr5T7bbti4gEEIkvpBUb4M";
+dotenv.config(); // Load .env variables
 
+// Supabase backend configuration
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+// Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 /**
@@ -16,7 +21,7 @@ export async function createPost(title, content, author) {
   const { data, error } = await supabase
     .from("posts")
     .insert([{ title, content, author }])
-    .select(); // return inserted row
+    .select(); // Return inserted row
 
   if (error) throw new Error(error.message);
   return data[0];
@@ -29,7 +34,7 @@ export async function getPosts() {
   const { data, error } = await supabase
     .from("posts")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }); // Latest first
 
   if (error) throw new Error(error.message);
   return data;
