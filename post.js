@@ -1,15 +1,12 @@
-// post.js
-import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
-
-dotenv.config(); // Load .env variables
+// post.js — Supabase CRUD for Posts (Deno Deploy)
+import { createClient } from "npm:@supabase/supabase-js";
 
 // Supabase backend configuration
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_KEY");
 
 // Initialize Supabase client
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
  * Create a new post
@@ -21,7 +18,7 @@ export async function createPost(title, content, author) {
   const { data, error } = await supabase
     .from("posts")
     .insert([{ title, content, author }])
-    .select(); // Return inserted row
+    .select();
 
   if (error) throw new Error(error.message);
   return data[0];
@@ -34,7 +31,7 @@ export async function getPosts() {
   const { data, error } = await supabase
     .from("posts")
     .select("*")
-    .order("created_at", { ascending: false }); // Latest first
+    .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
   return data;
