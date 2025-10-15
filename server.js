@@ -5,6 +5,9 @@ import express from "npm:express";
 import cors from "npm:cors";
 import { createClient } from "npm:@supabase/supabase-js";
 
+// 📝 Import story CRUD functions
+import { createStory, getStories, getStoryById, updateStory, deleteStory } from "./story.js";
+
 // ⚙️ Initialize Express app
 const app = express();
 app.use(cors());
@@ -54,33 +57,37 @@ app.post("/posts", async (req, res) => {
 });
 
 // ==========================
-// 📰 STORIES SECTION
+// 📰 STORIES SECTION (using story.js)
 // ==========================
 
 // 🧾 Get all stories
 app.get("/stories", async (req, res) => {
   try {
-    const { data, error } = await supabase.from("stories").select("*");
-    if (error) throw error;
-    res.json({ success: true, stories: data });
+    const stories = await getStories();
+    res.json({ success: true, stories });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// ➕ Add new story
+// ➕ Add a new story
 app.post("/stories", async (req, res) => {
   try {
     const { title, short_intro, content, image_url, user_id } = req.body;
-    const { data, error } = await supabase
-      .from("stories")
-      .insert([{ title, short_intro, content, image_url, user_id }])
-      .select();
-
-    if (error) throw error;
-    res.status(201).json({ success: true, story: data });
+    const story = await createStory(title, short_intro, content, image_url, user_id);
+    res.status(201).json({ success: true, story });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 📝 Optional: Get a story by ID
+app.get("/stories/:id", async (req, res) => {
+  try {
+    const story = await getStoryById(req.params.id);
+    res.json({ success: true, story });
+  } catch (err) {
+    res.status(404).json({ success: false, error: err.message });
   }
 });
 
