@@ -1,15 +1,13 @@
-// story.js — Supabase CRUD for Stories
-import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
+// story.js — Supabase CRUD for Stories (Deno Deploy)
 
-dotenv.config(); // Load .env variables
+import { createClient } from "npm:@supabase/supabase-js";
 
 // Supabase backend configuration
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_KEY");
 
 // Initialize Supabase client
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Create a new story
 export async function createStory(title, short_intro, content, image_url, user_id) {
