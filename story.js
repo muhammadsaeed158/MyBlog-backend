@@ -1,0 +1,78 @@
+// server.js
+import express from "express";
+import cors from "cors";
+import { createPost, getPosts, getPostById, updatePost, deletePost } from "./post.js";
+import { createStory, getStories, getStoryById, updateStory, deleteStory } from "./story.js";
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Home
+app.get("/", (req, res) => {
+  res.send("🚀 MyBlog Backend is running!");
+});
+
+// ==========================
+// POSTS ROUTES
+// ==========================
+app.get("/posts", async (req, res) => {
+  try { res.json(await getPosts()); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/posts/:id", async (req, res) => {
+  try { res.json(await getPostById(req.params.id)); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/posts", async (req, res) => {
+  try { res.status(201).json(await createPost(req.body.title, req.body.content, req.body.author)); } 
+  catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put("/posts/:id", async (req, res) => {
+  try { res.json(await updatePost(req.params.id, req.body)); } 
+  catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete("/posts/:id", async (req, res) => {
+  try { res.json(await deletePost(req.params.id)); } 
+  catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// ==========================
+// STORIES ROUTES
+// ==========================
+app.get("/stories", async (req, res) => {
+  try { res.json(await getStories()); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/stories/:id", async (req, res) => {
+  try { res.json(await getStoryById(req.params.id)); } 
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/stories", async (req, res) => {
+  try {
+    const { title, short_intro, content, image_url, user_id } = req.body;
+    res.status(201).json(await createStory(title, short_intro, content, image_url, user_id));
+  } catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.put("/stories/:id", async (req, res) => {
+  try { res.json(await updateStory(req.params.id, req.body)); } 
+  catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+app.delete("/stories/:id", async (req, res) => {
+  try { res.json(await deleteStory(req.params.id)); } 
+  catch (err) { res.status(400).json({ error: err.message }); }
+});
+
+// ==========================
+// SERVER START
+// ==========================
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => console.log(`✅ MyBlog Backend running on port ${PORT}`));
