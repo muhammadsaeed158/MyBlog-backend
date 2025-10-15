@@ -1,5 +1,4 @@
 // story.js — Supabase CRUD for Stories (Deno Deploy)
-
 import { createClient } from "npm:@supabase/supabase-js";
 
 // Supabase backend configuration
