@@ -1,78 +1,69 @@
-// server.js
-import express from "express";
-import cors from "cors";
-import { createPost, getPosts, getPostById, updatePost, deletePost } from "./post.js";
-import { createStory, getStories, getStoryById, updateStory, deleteStory } from "./story.js";
+// story.js — Supabase CRUD for Stories
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+dotenv.config(); // Load .env variables
 
-// Home
-app.get("/", (req, res) => {
-  res.send("🚀 MyBlog Backend is running!");
-});
+// Supabase backend configuration
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
-// ==========================
-// POSTS ROUTES
-// ==========================
-app.get("/posts", async (req, res) => {
-  try { res.json(await getPosts()); } 
-  catch (err) { res.status(500).json({ error: err.message }); }
-});
+// Initialize Supabase client
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-app.get("/posts/:id", async (req, res) => {
-  try { res.json(await getPostById(req.params.id)); } 
-  catch (err) { res.status(500).json({ error: err.message }); }
-});
+// Create a new story
+export async function createStory(title, short_intro, content, image_url, user_id) {
+  const { data, error } = await supabase
+    .from("stories")
+    .insert([{ title, short_intro, content, image_url, user_id }])
+    .select();
 
-app.post("/posts", async (req, res) => {
-  try { res.status(201).json(await createPost(req.body.title, req.body.content, req.body.author)); } 
-  catch (err) { res.status(400).json({ error: err.message }); }
-});
+  if (error) throw new Error(error.message);
+  return data[0];
+}
 
-app.put("/posts/:id", async (req, res) => {
-  try { res.json(await updatePost(req.params.id, req.body)); } 
-  catch (err) { res.status(400).json({ error: err.message }); }
-});
+// Get all stories
+export async function getStories() {
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-app.delete("/posts/:id", async (req, res) => {
-  try { res.json(await deletePost(req.params.id)); } 
-  catch (err) { res.status(400).json({ error: err.message }); }
-});
+  if (error) throw new Error(error.message);
+  return data;
+}
 
-// ==========================
-// STORIES ROUTES
-// ==========================
-app.get("/stories", async (req, res) => {
-  try { res.json(await getStories()); } 
-  catch (err) { res.status(500).json({ error: err.message }); }
-});
+// Get single story by ID
+export async function getStoryById(id) {
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .eq("id", id)
+    .single();
 
-app.get("/stories/:id", async (req, res) => {
-  try { res.json(await getStoryById(req.params.id)); } 
-  catch (err) { res.status(500).json({ error: err.message }); }
-});
+  if (error) throw new Error(error.message);
+  return data;
+}
 
-app.post("/stories", async (req, res) => {
-  try {
-    const { title, short_intro, content, image_url, user_id } = req.body;
-    res.status(201).json(await createStory(title, short_intro, content, image_url, user_id));
-  } catch (err) { res.status(400).json({ error: err.message }); }
-});
+// Update story by ID
+export async function updateStory(id, updates) {
+  const { data, error } = await supabase
+    .from("stories")
+    .update(updates)
+    .eq("id", id)
+    .select();
 
-app.put("/stories/:id", async (req, res) => {
-  try { res.json(await updateStory(req.params.id, req.body)); } 
-  catch (err) { res.status(400).json({ error: err.message }); }
-});
+  if (error) throw new Error(error.message);
+  return data[0];
+}
 
-app.delete("/stories/:id", async (req, res) => {
-  try { res.json(await deleteStory(req.params.id)); } 
-  catch (err) { res.status(400).json({ error: err.message }); }
-});
+// Delete story by ID
+export async function deleteStory(id) {
+  const { error } = await supabase
+    .from("stories")
+    .delete()
+    .eq("id", id);
 
-// ==========================
-// SERVER START
-// ==========================
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log(`✅ MyBlog Backend running on port ${PORT}`));
+  if (error) throw new Error(error.message);
+  return true;
+}
