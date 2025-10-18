@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js";
 
 // Supabase backend configuration
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_KEY");
+const supabaseKey = Deno.env.get("SUPABASE_KEY");
 
 // Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey);
