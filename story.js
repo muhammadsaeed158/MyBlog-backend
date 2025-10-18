@@ -1,14 +1,12 @@
-// story.js — Supabase CRUD for Stories (for Express backend)
+// story.js — handles CRUD for "stories" table in Supabase
+
 import { createClient } from "npm:@supabase/supabase-js";
 
-// Supabase backend configuration
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_KEY");
-
-// Initialize Supabase client
+const supabaseKey = Deno.env.get("SUPABASE_KEY");
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ✅ Add "export" in front of each function
+// ✅ Create a new story
 export async function createStory(title, short_intro, content, image_url, user_id) {
   const { data, error } = await supabase
     .from("stories")
@@ -19,6 +17,7 @@ export async function createStory(title, short_intro, content, image_url, user_i
   return data[0];
 }
 
+// ✅ Get all stories
 export async function getStories() {
   const { data, error } = await supabase
     .from("stories")
@@ -29,6 +28,7 @@ export async function getStories() {
   return data;
 }
 
+// ✅ Get single story by ID
 export async function getStoryById(id) {
   const { data, error } = await supabase
     .from("stories")
@@ -40,6 +40,7 @@ export async function getStoryById(id) {
   return data;
 }
 
+// ✅ Update story by ID
 export async function updateStory(id, updates) {
   const { data, error } = await supabase
     .from("stories")
@@ -51,6 +52,7 @@ export async function updateStory(id, updates) {
   return data[0];
 }
 
+// ✅ Delete story by ID
 export async function deleteStory(id) {
   const { error } = await supabase
     .from("stories")
