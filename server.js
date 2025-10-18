@@ -6,12 +6,22 @@ import cors from "npm:cors";
 import { createPost, getPosts, getPostById, updatePost, deletePost } from "./post.js";
 import { createStory, getStories, getStoryById, updateStory, deleteStory } from "./story.js";
 
+// ✅ Import Authentication routes
+import authRoutes from "./auth.js";
+
 // Initialize Express app
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Home route
+// ==========================
+// AUTH ROUTES
+// ==========================
+app.use("/auth", authRoutes); // 👈 all auth endpoints: /auth/signup, /auth/login, /auth/forgot-password
+
+// ==========================
+// HOME ROUTE
+// ==========================
 app.get("/", (req, res) => {
   res.send("🚀 MyBlog Backend is running!");
 });
