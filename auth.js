@@ -1,149 +1,122 @@
-// auth.js — Authentication routes for MyBlog Backend (Deno + Supabase)
-import express from "npm:express";
+// auth.js — Deno-native version (no Express)
+import { createClient } from "npm:@supabase/supabase-js";
 import bcrypt from "npm:bcryptjs";
 import jwt from "npm:jsonwebtoken";
-import { createClient } from "npm:@supabase/supabase-js";
 
-// Initialize router
-const router = express.Router();
-
-// Supabase setup
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseKey = Deno.env.get("SUPABASE_KEY");
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-// JWT secret key
 const JWT_SECRET = Deno.env.get("JWT_SECRET") || "mysecretkey";
 
-// ==========================
-// SIGNUP
-// ==========================
-router.post("/signup", async (req, res) => {
+// Helper: JSON response
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export default async (req) => {
+  const url = new URL(req.url);
+  const path = url.pathname;
+  const body = await req.json();
+
   try {
-    const { name, email, password } = req.body;
+    // =============== SIGNUP ===============
+    if (path === "/signup" && req.method === "POST") {
+      const { name, email, password } = body;
 
-    // Check if user already exists
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", email)
-      .single();
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .single();
 
-    if (existingUser) {
-      return res.status(400).json({ error: "User already exists" });
+      if (existingUser) {
+        return jsonResponse({ error: "User already exists" }, 400);
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const { data, error } = await supabase
+        .from("users")
+        .insert([{ name, email, password: hashedPassword }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return jsonResponse({ message: "Signup successful", user: data });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // =============== LOGIN ===============
+    if (path === "/login" && req.method === "POST") {
+      const { email, password } = body;
 
-    // Insert new user
-    const { data, error } = await supabase
-      .from("users")
-      .insert([{ name, email, password: hashedPassword }])
-      .select()
-      .single();
+      const { data: user, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .single();
 
-    if (error) throw error;
+      if (error || !user) {
+        return jsonResponse({ error: "Invalid email or password" }, 400);
+      }
 
-    res.status(201).json({ message: "Signup successful", user: data });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return jsonResponse({ error: "Invalid email or password" }, 400);
+      }
 
-// ==========================
-// LOGIN
-// ==========================
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
 
-    // Find user by email
-    const { data: user, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", email)
-      .single();
-
-    if (error || !user) {
-      return res.status(400).json({ error: "Invalid email or password" });
+      return jsonResponse({ message: "Login successful", token });
     }
 
-    // Compare password
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(400).json({ error: "Invalid email or password" });
+    // =============== FORGOT PASSWORD ===============
+    if (path === "/forgot" && req.method === "POST") {
+      const { email } = body;
+
+      const { data: user } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .single();
+
+      if (!user) {
+        return jsonResponse({ error: "Email not found" }, 400);
+      }
+
+      const resetToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: "15m" });
+      const resetLink = `https://your-frontend-domain/reset.html?token=${resetToken}`;
+
+      return jsonResponse({
+        message: "Password reset link generated",
+        resetLink,
+      });
     }
 
-    // Create JWT token
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    // =============== RESET PASSWORD ===============
+    if (path === "/reset" && req.method === "POST") {
+      const { token, newPassword } = body;
+      const decoded = jwt.verify(token, JWT_SECRET);
+      const email = decoded.email;
 
-    res.json({ message: "Login successful", token });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const { error } = await supabase
+        .from("users")
+        .update({ password: hashedPassword })
+        .eq("email", email);
 
-// ==========================
-// FORGOT PASSWORD (send reset link)
-// ==========================
-router.post("/forgot", async (req, res) => {
-  try {
-    const { email } = req.body;
+      if (error) throw error;
 
-    const { data: user } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", email)
-      .single();
-
-    if (!user) {
-      return res.status(400).json({ error: "Email not found" });
+      return jsonResponse({ message: "Password reset successful" });
     }
 
-    // Create reset token
-    const resetToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: "15m" });
-
-    // In real app: send email. Here, just return link.
-    const resetLink = `https://your-frontend-domain/reset.html?token=${resetToken}`;
-
-    res.json({ message: "Password reset link generated", resetLink });
+    // =============== DEFAULT (Not Found) ===============
+    return jsonResponse({ error: "Not found" }, 404);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    return jsonResponse({ error: err.message }, 500);
   }
-});
-
-// ==========================
-// RESET PASSWORD
-// ==========================
-router.post("/reset", async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
-
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const email = decoded.email;
-
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update in Supabase
-    const { error } = await supabase
-      .from("users")
-      .update({ password: hashedPassword })
-      .eq("email", email);
-
-    if (error) throw error;
-
-    res.json({ message: "Password reset successful" });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// ==========================
-// EXPORT ROUTER
-// ==========================
-export default router;
+};
