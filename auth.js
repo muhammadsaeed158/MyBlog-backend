@@ -1,58 +1,149 @@
-// auth.js
-import express from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+// auth.js — Authentication routes for MyBlog Backend (Deno + Supabase)
+import express from "npm:express";
+import bcrypt from "npm:bcryptjs";
+import jwt from "npm:jsonwebtoken";
+import { createClient } from "npm:@supabase/supabase-js";
 
+// Initialize router
 const router = express.Router();
 
-// Temporary in-memory user storage (replace later with Supabase)
-const users = [];
+// Supabase setup
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseKey = Deno.env.get("SUPABASE_KEY");
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Secret key for JWT
-const SECRET_KEY = "my_secret_key_123";
+// JWT secret key
+const JWT_SECRET = Deno.env.get("JWT_SECRET") || "mysecretkey";
 
-// ✅ SIGNUP
+// ==========================
+// SIGNUP
+// ==========================
 router.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-  if (!email || !password)
-    return res.status(400).json({ error: { message: "Missing email or password" } });
+    // Check if user already exists
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .single();
 
-  const exists = users.find(u => u.email === email);
-  if (exists)
-    return res.status(400).json({ error: { message: "User already exists" } });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
 
-  const hashed = await bcrypt.hash(password, 10);
-  users.push({ email, password: hashed });
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  res.json({ success: true, message: "Account created successfully!" });
+    // Insert new user
+    const { data, error } = await supabase
+      .from("users")
+      .insert([{ name, email, password: hashedPassword }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ message: "Signup successful", user: data });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
-// ✅ LOGIN
+// ==========================
+// LOGIN
+// ==========================
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = users.find(u => u.email === email);
-  if (!user)
-    return res.status(400).json({ error: { message: "User not found" } });
+    // Find user by email
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .single();
 
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid)
-    return res.status(400).json({ error: { message: "Invalid password" } });
+    if (error || !user) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
 
-  const token = jwt.sign({ email: user.email }, SECRET_KEY, { expiresIn: "1h" });
-  res.json({ success: true, token });
+    // Compare password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    // Create JWT token
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.json({ message: "Login successful", token });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
-// ✅ FORGOT PASSWORD (Mock)
-router.post("/forgot-password", (req, res) => {
-  const { email } = req.body;
+// ==========================
+// FORGOT PASSWORD (send reset link)
+// ==========================
+router.post("/forgot", async (req, res) => {
+  try {
+    const { email } = req.body;
 
-  const user = users.find(u => u.email === email);
-  if (!user)
-    return res.status(404).json({ error: { message: "Email not found" } });
+    const { data: user } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .single();
 
-  res.json({ success: true, message: "Password reset link sent (demo)" });
+    if (!user) {
+      return res.status(400).json({ error: "Email not found" });
+    }
+
+    // Create reset token
+    const resetToken = jwt.sign({ email }, JWT_SECRET, { expiresIn: "15m" });
+
+    // In real app: send email. Here, just return link.
+    const resetLink = `https://your-frontend-domain/reset.html?token=${resetToken}`;
+
+    res.json({ message: "Password reset link generated", resetLink });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
+// ==========================
+// RESET PASSWORD
+// ==========================
+router.post("/reset", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    // Verify token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const email = decoded.email;
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update in Supabase
+    const { error } = await supabase
+      .from("users")
+      .update({ password: hashedPassword })
+      .eq("email", email);
+
+    if (error) throw error;
+
+    res.json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ==========================
+// EXPORT ROUTER
+// ==========================
 export default router;
