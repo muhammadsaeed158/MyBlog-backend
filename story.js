@@ -1,95 +1,62 @@
-// story.js — Express Router version (for Node/Vercel Node runtime)
-import express from "npm:express";
+// story.js — Supabase CRUD for Stories (for Express backend)
 import { createClient } from "npm:@supabase/supabase-js";
 
-const router = express.Router();
-
+// Supabase backend configuration
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
-const supabaseKey = Deno.env.get("SUPABASE_KEY");
+const supabaseKey = Deno.env.get("SUPABASE_SERVICE_KEY");
+
+// Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ==========================
-// CREATE STORY
-// ==========================
-router.post("/", async (req, res) => {
-  try {
-    const { title, short_intro, content, image_url, user_id } = req.body;
-    const { data, error } = await supabase
-      .from("stories")
-      .insert([{ title, short_intro, content, image_url, user_id }])
-      .select();
-    if (error) throw error;
-    res.status(201).json(data[0]);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+// ✅ Add "export" in front of each function
+export async function createStory(title, short_intro, content, image_url, user_id) {
+  const { data, error } = await supabase
+    .from("stories")
+    .insert([{ title, short_intro, content, image_url, user_id }])
+    .select();
 
-// ==========================
-// GET ALL STORIES
-// ==========================
-router.get("/", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("stories")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+  if (error) throw new Error(error.message);
+  return data[0];
+}
 
-// ==========================
-// GET SINGLE STORY BY ID
-// ==========================
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { data, error } = await supabase
-      .from("stories")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+export async function getStories() {
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-// ==========================
-// UPDATE STORY
-// ==========================
-router.put("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-    const { data, error } = await supabase
-      .from("stories")
-      .update(updates)
-      .eq("id", id)
-      .select();
-    if (error) throw error;
-    res.json(data[0]);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+  if (error) throw new Error(error.message);
+  return data;
+}
 
-// ==========================
-// DELETE STORY
-// ==========================
-router.delete("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { error } = await supabase.from("stories").delete().eq("id", id);
-    if (error) throw error;
-    res.json({ message: "Story deleted successfully" });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+export async function getStoryById(id) {
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .eq("id", id)
+    .single();
 
-export default router;
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateStory(id, updates) {
+  const { data, error } = await supabase
+    .from("stories")
+    .update(updates)
+    .eq("id", id)
+    .select();
+
+  if (error) throw new Error(error.message);
+  return data[0];
+}
+
+export async function deleteStory(id) {
+  const { error } = await supabase
+    .from("stories")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  return true;
+}
